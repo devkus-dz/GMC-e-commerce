@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import users from './data/users.js';
 import products from './data/products.js';
@@ -29,8 +29,15 @@ const importData = async () => {
 
     console.log('--- Data Cleared ---');
 
+    const usersWithHashedPasswords = users.map((user) => {
+      // Synchronously hash the password (salt 10 is standard)
+      const salt = bcrypt.genSaltSync(10);
+      const hash = bcrypt.hashSync(user.password, salt);
+      return { ...user, password: hash };
+    });
+
     // 2. CREATE USERS
-    const createdUsers = await User.model.create(users);
+    const createdUsers = await User.model.create(usersWithHashedPasswords);
     const adminUser = createdUsers[0]._id; // Admin is first in users.js
     const customerUser = createdUsers[1]._id; // Customer is second
 
