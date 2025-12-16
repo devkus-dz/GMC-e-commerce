@@ -1,9 +1,6 @@
 import mongoose from 'mongoose';
 import BaseModel from './BaseModel.js';
 
-// ❌ OLD ERROR: const ProductSchema = new Schema({ ... });
-
-// ✅ CORRECT: Use mongoose.Schema
 const productSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: { type: String },
@@ -12,7 +9,6 @@ const productSchema = new mongoose.Schema({
   countInStock: { type: Number, required: true, default: 0 },
   images: [{ type: String }],
   
-  // Variations (as discussed before)
   variations: [
     {
       color: { type: String },

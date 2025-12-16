@@ -62,6 +62,35 @@ class BaseModel {
         throw error;
       }
     }
+
+    /**
+   * @desc    Get paginated results
+   * @param   {Object} query - MongoDB query filter (e.g. { name: "iPhone" })
+   * @param   {Number} page - Current page number (default 1)
+   * @param   {Number} limit - Items per page (default 10)
+   */
+    async findPaginated(query = {}, page = 1, limit = 10) {
+      // 1. Count total documents matching the query (for calculating total pages)
+      const count = await this.model.countDocuments({ ...query });
+
+      // 2. Calculate how many items to skip
+      // Example: Page 1 skips 0. Page 2 skips 10.
+      const skip = (page - 1) * limit;
+
+      // 3. Fetch the actual data
+      const items = await this.model.find({ ...query })
+        .limit(limit)
+        .skip(skip)
+        .sort({ createdAt: -1 }); // Sort by newest first
+
+      // 4. Return standard pagination object
+      return {
+        items,
+        page,
+        pages: Math.ceil(count / limit),
+        count
+      };
+    }
   }
   
   export default BaseModel;

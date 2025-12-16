@@ -12,9 +12,20 @@ class BaseController {
      */
     getAll = async (req, res) => {
       try {
-        // Pass req.query to handle simple filtering if your Model supports it
-        const items = await this.model.findAll(req.query); 
-        res.json(items);
+        // 1. Get Page and Limit from URL Query String
+        // URL Example: /api/products?pageNumber=2&limit=20
+        const pageSize = Number(req.query.limit) || 10;
+        const page = Number(req.query.pageNumber) || 1;
+  
+        // 2. Pass these to the new Model method
+        // We pass req.query (minus page/limit) as the filter
+        const filter = { ...req.query };
+        delete filter.pageNumber;
+        delete filter.limit;
+  
+        const result = await this.model.findPaginated(filter, page, pageSize);
+        
+        res.json(result);
       } catch (error) {
         res.status(500).json({ message: error.message });
       }
