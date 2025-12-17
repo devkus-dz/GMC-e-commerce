@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Card, CardMedia, CardContent, CardActions, 
@@ -8,15 +8,33 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import InfoIcon from '@mui/icons-material/Info';
 
 const ProductCard = ({ product }) => {
-  const temporaryImage = 'https://images.pexels.com/photos/953864/pexels-photo-953864.jpeg';
+  // RELIABLE FALLBACK: The generic food image you liked
+  const fallbackImage = 'https://images.pexels.com/photos/953864/pexels-photo-953864.jpeg';
+
+  // 1. Initialize state
+  // If product.image is missing/empty, start with fallback immediately
+  const [imgSrc, setImgSrc] = useState(product.image ? product.image : fallbackImage);
+
+  // 2. Handle 404 / Broken Links
+  const handleImgError = () => {
+    // Only switch if we aren't already showing the fallback (Prevents infinite loops)
+    if (imgSrc !== fallbackImage) {
+      setImgSrc(fallbackImage);
+    }
+  };
+
+  // 3. Reset state if the product prop changes (e.g. during pagination)
+  useEffect(() => {
+    setImgSrc(product.image ? product.image : fallbackImage);
+  }, [product.image]);
 
   return (
     <Card 
       elevation={3} 
       sx={{ 
-        width: '100%',      // Fill the grid slot
-        maxWidth: '100%',   // ✅ NEVER exceed the grid slot
-        height: '100%',     // Match height of neighbors
+        width: '100%',
+        maxWidth: '100%',
+        height: '100%',
         display: 'flex', 
         flexDirection: 'column',
         borderRadius: 2,
@@ -30,14 +48,14 @@ const ProductCard = ({ product }) => {
       <CardMedia
         component="img"
         height="200"
-        image={temporaryImage}
+        image={imgSrc}
         alt={product.name}
+        referrerPolicy="no-referrer"
+        onError={handleImgError} // <--- Triggers switch if URL fails
         sx={{ objectFit: 'cover' }}
       />
       
       <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-        
-        {/* Title: 'noWrap' is dangerous without minWidth constraint on parent, but safe now */}
         <Typography gutterBottom variant="h6" component="div" noWrap sx={{ fontWeight: 'bold' }}>
           {product.name}
         </Typography>
@@ -51,7 +69,7 @@ const ProductCard = ({ product }) => {
             overflow: 'hidden',
             WebkitBoxOrient: 'vertical',
             WebkitLineClamp: 2,
-            height: '40px' 
+            height: '40px'
           }}
         >
           {product.description}

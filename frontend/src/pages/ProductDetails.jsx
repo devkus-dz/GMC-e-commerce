@@ -9,19 +9,32 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import axios from 'axios';
 
 const ProductDetails = () => {
-  const { id } = useParams(); // Get ID from URL
+  const { id } = useParams();
   const [product, setProduct] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Temporary Hardcoded Image (Same as Home page for consistency)
-  const temporaryImage = 'https://images.pexels.com/photos/953864/pexels-photo-953864.jpeg';
+  // --- IMAGE HANDLING LOGIC START ---
+  const fallbackImage = 'https://images.pexels.com/photos/953864/pexels-photo-953864.jpeg';
+  const [imgSrc, setImgSrc] = useState(fallbackImage);
+
+  const handleImgError = () => {
+    if (imgSrc !== fallbackImage) {
+      setImgSrc(fallbackImage);
+    }
+  };
+  // --- IMAGE HANDLING LOGIC END ---
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         const { data } = await axios.get(`/api/products/${id}`);
         setProduct(data);
+        
+        // Update image state once data arrives
+        // If data.image is empty, use fallback immediately
+        setImgSrc(data.image ? data.image : fallbackImage);
+        
         setLoading(false);
       } catch (err) {
         setError(err.response?.data?.message || err.message);
@@ -33,7 +46,6 @@ const ProductDetails = () => {
   }, [id]);
 
   const addToCartHandler = () => {
-    // We will implement Redux Cart logic here later
     console.log('Added to cart:', product.name);
   };
 
@@ -54,7 +66,6 @@ const ProductDetails = () => {
 
   return (
     <Container sx={{ mt: 4 }}>
-      {/* Back Button */}
       <Button 
         component={Link} 
         to="/" 
@@ -69,12 +80,16 @@ const ProductDetails = () => {
         <Grid item md={6} xs={12}>
           <Box 
             component="img"
-            src={temporaryImage} // Using the working Pexels image
+            src={imgSrc}            // ✅ Uses state (Real Image or Fallback)
             alt={product.name}
+            onError={handleImgError} // ✅ Safety Trigger
+            referrerPolicy="no-referrer"
             sx={{ 
               width: '100%', 
               borderRadius: 2, 
-              boxShadow: 3 
+              boxShadow: 3,
+              objectFit: 'cover',   // Ensures image looks good
+              maxHeight: '500px'    // Prevents it from being too tall on large screens
             }}
           />
         </Grid>
@@ -103,7 +118,6 @@ const ProductDetails = () => {
             </ListItem>
           </List>
 
-          {/* ADD TO CART BOX */}
           <Paper elevation={3} sx={{ p: 3, mt: 4 }}>
             <Grid container spacing={2} alignItems="center">
               <Grid item xs={6}>
