@@ -10,22 +10,34 @@ class BaseController {
      * @desc    Get all items
      * @route   GET /api/:resource
      */
+    // Generic Get All
     getAll = async (req, res) => {
       try {
-        // 1. Get Page and Limit from URL Query String
-        // URL Example: /api/products?pageNumber=2&limit=20
-        const pageSize = Number(req.query.limit) || 10;
-        const page = Number(req.query.pageNumber) || 1;
-  
-        // 2. Pass these to the new Model method
-        // We pass req.query (minus page/limit) as the filter
-        const filter = { ...req.query };
-        delete filter.pageNumber;
-        delete filter.limit;
-  
-        const result = await this.model.findPaginated(filter, page, pageSize);
+        // 1. Check if limit is provided in Query
+        const hasLimit = req.query.limit !== undefined;
         
-        res.json(result);
+        // 2. Set pagination variables
+        // If limit is provided, use it. If not, use 0 (Mongoose 0 = No Limit / Fetch All)
+        const limit = hasLimit ? Number(req.query.limit) : 0; 
+        const page = Number(req.query.pageNumber) || 1;
+        const skip = limit > 0 ? limit * (page - 1) : 0;
+
+        // 3. Query
+        // We use 'this.model.model' to access the raw Mongoose model if using your wrapper
+        const count = await this.model.model.countDocuments({});
+        
+        const items = await this.model.model.find({})
+          .limit(limit)
+          .skip(skip)
+          .sort({ createdAt: -1 });
+
+        // 4. Return consistent structure
+        res.json({
+          items,
+          page,
+          pages: limit > 0 ? Math.ceil(count / limit) : 1, // If no limit, only 1 page exists
+          count
+        });
       } catch (error) {
         res.status(500).json({ message: error.message });
       }

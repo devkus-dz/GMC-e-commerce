@@ -94,6 +94,14 @@ class OrderModel extends BaseModel {
   async findByIdPopulated(id) {
     return await this.model.findById(id).populate('user', 'name email');
   }
+
+  /**
+   * Find ALL orders and populate user details (For Admin Dashboard)
+   */
+  async findAllPopulated() {
+    // We access the raw mongoose model via 'this.model' inherited from BaseModel
+    return await this.model.find({}).populate('user', 'id name');
+  }
 }
 
 export default new OrderModel();

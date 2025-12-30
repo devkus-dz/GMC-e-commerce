@@ -6,33 +6,48 @@ class ProductController extends BaseController {
     super(Product);
   }
 
-  // Override 'getAll' to handle Keyword Search adn Pagination
   getAll = async (req, res) => {
     try {
-      const pageSize = Number(req.query.limit) || 8; // Default 8 products per page
-      const page = Number(req.query.pageNumber) || 1;
+      const limitQuery = req.query.limit;
+      const pageSize = limitQuery && !isNaN(limitQuery) ? Number(limitQuery) : 0;
+      
+      const pageQuery = req.query.pageNumber;
+      const page = pageQuery && !isNaN(pageQuery) ? Number(pageQuery) : 1;
 
-      // Build the keyword filter
-      const keyword = req.query.keyword
-        ? {
-            name: {
-              $regex: req.query.keyword,
-              $options: 'i',
-            },
-          }
-        : {};
+      // --- BUILD QUERY ---
+      const query = {};
+      
+      // 1. Search Logic
+      if (req.query.keyword) {
+        query.name = { $regex: req.query.keyword, $options: 'i' };
+      }
 
-      // Call the new BaseModel method
-      const result = await this.model.findPaginated(keyword, page, pageSize);
+      // 2. Category Logic (ADD THIS BLOCK)
+      if (req.query.category) {
+        query.category = req.query.category;
+      }
+      // -------------------
 
-      // Result looks like: { items: [...], page: 1, pages: 5, count: 40 }
-      res.json(result);
+      const count = await this.model.model.countDocuments({ ...query });
+
+      const items = await this.model.model.find({ ...query })
+        .populate('category', 'name')
+        .limit(pageSize)
+        .skip(pageSize > 0 ? pageSize * (page - 1) : 0)
+        .sort({ createdAt: -1 });
+
+      res.json({ 
+        items, 
+        page, 
+        pages: pageSize > 0 ? Math.ceil(count / pageSize) : 1, 
+        count 
+      });
+
     } catch (error) {
+      console.error(error); 
       res.status(500).json({ message: error.message });
     }
   };
-  
-  // getById, create, update, and delete are INHERITED automatically!
 }
 
 export default new ProductController();

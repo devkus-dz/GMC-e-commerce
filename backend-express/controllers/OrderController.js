@@ -68,32 +68,85 @@ class OrderController extends BaseController {
     }
   };
 
-  /**
-   * @desc    Update order to paid
+/**
+   * @desc    Update order to paid (Toggle)
    * @route   PUT /api/orders/:id/pay
    */
-  updateOrderToPaid = async (req, res) => {
-    try {
-      const order = await this.model.findById(req.params.id);
+updateOrderToPaid = async (req, res) => {
+  try {
+    const order = await this.model.findById(req.params.id);
 
-      if (order) {
+    if (order) {
+      // TOGGLE LOGIC:
+      if (order.isPaid) {
+        // If already paid, undo it
+        order.isPaid = false;
+        order.paidAt = null;
+        order.paymentResult = {}; 
+      } else {
+        // If not paid, mark as paid
         order.isPaid = true;
         order.paidAt = Date.now();
         order.paymentResult = {
-          id: req.body.id,
-          status: req.body.status,
-          update_time: req.body.update_time,
-          email_address: req.body.payer?.email_address,
+           id: req.body.id || 'COD_MANUAL',
+           status: 'COMPLETED',
+           update_time: Date.now(),
+           email_address: req.body.email_address || order.user?.email,
         };
-
-        // We use .save() directly on the mongoose document
-        const updatedOrder = await order.save();
-        res.json(updatedOrder);
-      } else {
-        res.status(404).json({ message: 'Order not found' });
       }
+
+      const updatedOrder = await order.save();
+      res.json(updatedOrder);
+    } else {
+      res.status(404).json({ message: 'Order not found' });
+    }
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+/**
+ * @desc    Update order to delivered (Toggle)
+ * @route   PUT /api/orders/:id/deliver
+ */
+updateOrderToDelivered = async (req, res) => {
+  try {
+    const order = await this.model.findById(req.params.id);
+
+    if (order) {
+      // TOGGLE LOGIC:
+      if (order.isDelivered) {
+         // If already delivered, undo it
+         order.isDelivered = false;
+         order.deliveredAt = null;
+      } else {
+         // If not delivered, mark as delivered
+         order.isDelivered = true;
+         order.deliveredAt = Date.now();
+      }
+
+      const updatedOrder = await order.save();
+      res.json(updatedOrder);
+    } else {
+      res.status(404).json({ message: 'Order not found' });
+    }
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+  /**
+     * @desc    Get all orders (Admin)
+     * @route   GET /api/orders
+     * @access  Private/Admin
+     */
+  getAllOrders = async (req, res) => {
+    try {
+      // ✅ CORRECT: Call the method on your Class Instance
+      const orders = await this.model.findAllPopulated();
+      res.json(orders);
     } catch (error) {
-      res.status(400).json({ message: error.message });
+      res.status(500).json({ message: error.message });
     }
   };
 

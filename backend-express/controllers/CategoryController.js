@@ -24,6 +24,7 @@ class CategoryController extends BaseController {
       res.status(400).json({ message: error.message });
     }
   };
+
 }
 
 export default new CategoryController();
