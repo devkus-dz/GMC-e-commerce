@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Container, Box, Avatar, Typography, TextField, Button, Alert, Paper, Stack } from '@mui/material';
 import AppRegistrationIcon from '@mui/icons-material/AppRegistration';
-import axios from 'axios';
-import useAuthStore from '../store'; // ✅ Import Zustand Store
+import axios from '../utils/axiosConfig';
+import useAuthStore from '../store';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -16,7 +16,7 @@ const Register = () => {
   
   const navigate = useNavigate();
 
-  // ✅ Zustand: Get state and actions
+  // Zustand: Get state and actions
   const { userInfo, setCredentials } = useAuthStore();
 
   useEffect(() => {
@@ -25,7 +25,7 @@ const Register = () => {
     }
   }, [navigate, userInfo]);
 
-  // Validation Logic (Same as before)
+  // Validation Logic
   const validateInputs = () => {
     const errors = {};
     const nameRegex = /^[a-zA-Z\s]+$/;
@@ -70,7 +70,7 @@ const Register = () => {
         config
       );
 
-      // ✅ Zustand: Save to store & localStorage automatically
+      // Zustand: Save to store & localStorage automatically
       setCredentials(data);
       navigate('/');
     } catch (err) {

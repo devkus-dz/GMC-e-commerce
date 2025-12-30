@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Container, Box, Typography, Button } from '@mui/material';
-import GppBadIcon from '@mui/icons-material/GppBad'; // Shield Icon
+import GppBadIcon from '@mui/icons-material/GppBad';
 
 const Forbidden = () => {
   return (

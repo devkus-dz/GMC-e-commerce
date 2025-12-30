@@ -1,167 +1,111 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { 
-  Container, Box, Avatar, Typography, TextField, Button, 
-  Alert, Paper, Stack, Dialog, DialogTitle, DialogContent, 
-  DialogContentText, DialogActions 
-} from '@mui/material';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import axios from 'axios';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Container, Typography, TextField, Button, Paper, Box, Alert, CircularProgress } from '@mui/material';
+import LoginIcon from '@mui/icons-material/Login';
+import axios from '../utils/axiosConfig';
 import useAuthStore from '../store';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  
-  // Forgot Password State
-  const [openForgot, setOpenForgot] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
-  const [resetMessage, setResetMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
+  const location = useLocation();
   const { userInfo, setCredentials } = useAuthStore();
 
-  // 1. Check existing login status
+  const sp = new URLSearchParams(location.search);
+  const redirect = sp.get('redirect') || '/';
+
   useEffect(() => {
     if (userInfo) {
-      // ✅ SMART REDIRECT: Admins -> Dashboard, Customers -> Home
       if (userInfo.isAdmin) {
         navigate('/admin/dashboard');
       } else {
-        navigate('/');
+        navigate(redirect);
       }
     }
-  }, [navigate, userInfo]);
+  }, [userInfo, redirect, navigate]);
 
   const submitHandler = async (e) => {
     e.preventDefault();
-    setError('');
-    
+    setLoading(true);
     try {
-      const config = { headers: { 'Content-Type': 'application/json' } };
-      
-      const { data } = await axios.post(
-        '/api/users/login',
-        { email, password },
-        config
-      );
-
+      const { data } = await axios.post('/api/users/login', { email, password });
       setCredentials(data);
       
-      // ✅ SMART REDIRECT: Redirect based on role immediately after login
       if (data.isAdmin) {
-        navigate('/admin/dashboard');
+        // Admins go to Dashboard
+        navigate('/admin/dashboard'); 
       } else {
-        navigate('/');
+        // Normal Users go to Shipping or Home
+        navigate(redirect); 
       }
-
+      
     } catch (err) {
       setError(err.response?.data?.message || err.message);
+      setLoading(false);
     }
   };
 
-  // ... (Forgot Password Handlers remain the same) ...
-  const handleForgotOpen = () => setOpenForgot(true);
-  const handleForgotClose = () => {
-    setOpenForgot(false);
-    setResetMessage('');
-    setResetEmail('');
-  };
-  const handleResetSubmit = () => {
-    if (!resetEmail) return;
-    setTimeout(() => {
-      setResetMessage(`Password reset link sent to ${resetEmail}`);
-      setTimeout(handleForgotClose, 3000);
-    }, 1000);
-  };
-
   return (
-    <Container component="main" maxWidth="xs">
-      <Box sx={{ mt: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <Paper elevation={3} sx={{ p: 4, width: '100%', borderRadius: 2 }}>
-          <Stack spacing={2} alignItems="center">
-            <Avatar sx={{ bgcolor: 'secondary.main' }}>
-              <LockOutlinedIcon />
-            </Avatar>
-            <Typography component="h1" variant="h5">
-              Sign In
-            </Typography>
+    <Container maxWidth="xs" sx={{ mt: 8 }}>
+      <Paper elevation={3} sx={{ p: 4 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', flexDirection: 'column', mb: 3 }}>
+          <Box sx={{ bgcolor: 'secondary.main', p: 1, borderRadius: '50%', mb: 1 }}>
+            <LoginIcon sx={{ color: 'white' }} />
+          </Box>
+          <Typography component="h1" variant="h5">
+            Sign In
+          </Typography>
+        </Box>
 
-            {error && <Alert severity="error" sx={{ width: '100%' }}>{error}</Alert>}
-            {resetMessage && <Alert severity="success" sx={{ width: '100%' }}>{resetMessage}</Alert>}
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {loading && <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}><CircularProgress /></Box>}
 
-            <Box component="form" onSubmit={submitHandler} sx={{ mt: 1, width: '100%' }}>
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                id="email"
-                label="Email Address"
-                name="email"
-                autoComplete="email"
-                autoFocus
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                name="password"
-                label="Password"
-                type="password"
-                id="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                size="large"
-                sx={{ mt: 3, mb: 2 }}
-              >
-                Sign In
-              </Button>
-
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Button size="small" onClick={handleForgotOpen} sx={{ textTransform: 'none' }}>
-                  Forgot password?
-                </Button>
-                <Link to="/register" style={{ textDecoration: 'none', color: '#1976d2', fontSize: '0.875rem' }}>
-                  Don't have an account? Sign Up
-                </Link>
-              </Stack>
-            </Box>
-          </Stack>
-        </Paper>
-      </Box>
-
-      <Dialog open={openForgot} onClose={handleForgotClose}>
-        <DialogTitle>Reset Password</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            To reset your password, please enter your email address here.
-          </DialogContentText>
+        <Box component="form" onSubmit={submitHandler}>
           <TextField
-            autoFocus
-            margin="dense"
-            id="reset-email"
-            label="Email Address"
-            type="email"
+            margin="normal"
+            required
             fullWidth
-            variant="standard"
-            value={resetEmail}
-            onChange={(e) => setResetEmail(e.target.value)}
+            label="Email Address"
+            autoComplete="email"
+            autoFocus
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleForgotClose}>Cancel</Button>
-          <Button onClick={handleResetSubmit}>Send Reset Link</Button>
-        </DialogActions>
-      </Dialog>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            label="Password"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            sx={{ mt: 3, mb: 2 }}
+            disabled={loading}
+          >
+            Sign In
+          </Button>
+
+          <Box sx={{ textAlign: 'center', mt: 2 }}>
+            <Typography variant="body2">
+              New Customer?{' '}
+              <Link to={redirect ? `/register?redirect=${redirect}` : '/register'} style={{ textDecoration: 'none', color: '#1976d2' }}>
+                Register Here
+              </Link>
+            </Typography>
+          </Box>
+        </Box>
+      </Paper>
     </Container>
   );
 };
