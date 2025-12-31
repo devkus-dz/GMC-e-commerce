@@ -138,7 +138,7 @@ const OrderList = () => {
       
       <Box sx={{ height: 600, width: '100%', bgcolor: 'background.paper', borderRadius: 2, boxShadow: 2 }}>
         <DataGrid
-          // Pass the filtered array instead of raw 'orders'
+          // Pass the filtered array 'orders'
           rows={filteredOrders}
           columns={columns}
           getRowId={(row) => row._id}
